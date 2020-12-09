@@ -1,4 +1,7 @@
-# cmake_example for pybind11
+# ecc_python
+
+This project provides python bindings for the computation of epipolar consistency in transmission imaging.
+It is based on [pybind11](https://github.com/pybind/pybind11). This repo has been built upon their provided [cmake example](https://github.com/pybind/cmake_example).
 
 [![Gitter][gitter-badge]][gitter-link]
 
@@ -106,3 +109,4 @@ cmake_example.add(1, 2)
 
 [FAQ]: http://pybind11.rtfd.io/en/latest/faq.html#working-with-ancient-visual-studio-2009-builds-on-windows
 [vs2015_runtime]: https://www.microsoft.com/en-us/download/details.aspx?id=48145
+
