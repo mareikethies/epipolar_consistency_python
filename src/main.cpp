@@ -1,33 +1,25 @@
+#include <Eigen/Core>
+
 #include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
 
-#define STRINGIFY(x) #x
-#define MACRO_STRINGIFY(x) STRINGIFY(x)
-
-int add(int i, int j) {
-    return i + j;
-}
+#include "LibProjectiveGeometry/ProjectionMatrix.h"
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(cmake_example, m) {
+PYBIND11_MODULE(ecc, m)
+{
     m.doc() = R"pbdoc(
-        Pybind11 example plugin
+        Python wrappers for epipolar consistency computations from https://github.com/aaichert/EpipolarConsistency
         -----------------------
 
-        .. currentmodule:: cmake_example
+        .. currentmodule:: ecc
 
         .. autosummary::
            :toctree: _generate
 
-           add
-           subtract
+           makeCalibrationMatrix
     )pbdoc";
-
-    m.def("add", &add, R"pbdoc(
-        Add two numbers
-
-        Some other explanation about the add function.
-    )pbdoc");
 
     m.def("subtract", [](int i, int j) { return i - j; }, R"pbdoc(
         Subtract two numbers
@@ -35,9 +27,10 @@ PYBIND11_MODULE(cmake_example, m) {
         Some other explanation about the subtract function.
     )pbdoc");
 
-#ifdef VERSION_INFO
-    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
-#else
-    m.attr("__version__") = "dev";
-#endif
+    //auto submodule_projective_geometry = m.def_submodule("projective_geometry")
+
+    m.def("makeCalibrationMatrix", &Geometry::makeCalibrationMatrix, R"pbdoc(
+        Create intrinsics matrix K from values.
+    )pbdoc");
+
 }
