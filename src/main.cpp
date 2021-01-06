@@ -29,8 +29,7 @@ PYBIND11_MODULE(ecc, m)
 
     //auto submodule_projective_geometry = m.def_submodule("projective_geometry")
 
-    m.def("makeCalibrationMatrix", &Geometry::makeCalibrationMatrix, R"pbdoc(
-        Create intrinsics matrix K from values.
-    )pbdoc");
+    m.def("makeCalibrationMatrix", &Geometry::makeCalibrationMatrix, "Creates a new intrinsics matrix K.",
+        py::arg("ax"), py::arg("ay"), py::arg("u0"), py::arg("v0"), py::arg("skew")=0.0);
 
 }
