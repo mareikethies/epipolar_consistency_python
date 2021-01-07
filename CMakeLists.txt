@@ -5,16 +5,22 @@ find_package(Eigen3 3.3.0 REQUIRED NO_MODULE)
 
 add_subdirectory(pybind11)
 add_subdirectory(EpipolarConsistency)
+		
 pybind11_add_module(ecc src/main.cpp)
 
 target_include_directories(ecc 
     PRIVATE ${CMAKE_SOURCE_DIR}/EpipolarConsistency/code
+    PRIVATE ${CMAKE_SOURCE_DIR}/EpipolarConsistency/code/LibEpipolarConsistency
+    PRIVATE ${CMAKE_SOURCE_DIR}/EpipolarConsistency/code/HeaderOnly
     PUBLIC ${EIGEN3_INCLUDE_DIR}
 )
 
 target_link_libraries(ecc 
-    PUBLIC
+    PRIVATE
    LibProjectiveGeometry
+   LibUtilsCuda
+   LibEpipolarConsistency
+   gomp
    Eigen3::Eigen
 )
 
