@@ -65,8 +65,8 @@ terms and conditions of this license.
 ## Test call
 
 ```python
-import cmake_example
-cmake_example.add(1, 2)
+import ecc
+help(ecc)
 ```
 
 
