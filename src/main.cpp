@@ -6,6 +6,8 @@
 
 #include "LibProjectiveGeometry/ProjectionMatrix.h"
 #include "LibEpipolarConsistency/EpipolarConsistencyRadonIntermediateCPU.hxx"
+#include "NRRD/nrrd_image.hxx"
+#include "NRRD/nrrd_image_view.hxx"
 
 namespace py = pybind11;
 
@@ -23,7 +25,7 @@ PYBIND11_MODULE(ecc, m)
     m.def("projectionMatrixDecomposition", &Geometry::projectionMatrixDecomposition, 
         "Decompose Projection Matrix into K[R|t] using RQ-decomposition. Returns false if R is left-handed (For RHS world coordinate systems, this implies imageVPointsUp is wrong).",
         py::arg("P"), py::arg("K"), py::arg("R"), py::arg("t"), py::arg("imageVPointsUp")=true);
-    //TODO: why is python unhappy with normalizeProjectionMatrix??
+    //TODO: why is python unhappy with normalizeProjectionMatrix (fails at import)??
     //m.def("normalizeProjectionMatrix", &Geometry::normalizeProjectionMatrix, 
     //    "Normalize a camera matrix P=[M|p4] by -sign(det(M))/||m3|| such that (du,dv,d)'=P(X,Y,Z,1)' encodes the depth d.",
     //    py::arg("P"));
@@ -41,7 +43,36 @@ PYBIND11_MODULE(ecc, m)
     m.def("getCameraImagePlane", &Geometry::getCameraImagePlane, "Decomposes the projection matrix to compute the equation of the image plane. For left-handed coordinate systems, pixel_spacing can be negated.",
         py::arg("P"), py::arg("pixel_spacing"));
 
-    //TODO: How to convert from numpy to RadonIntermediates data structure?
+    py::class_<NRRD::ImageView<float>>(m, "ImageViewFloat");
+
+    //templates need to be set to a specific data type for wrapping
+    //base classes need to be wrapped, too. Otherwise python will complain about an unknown base class when importing the module.
+    //pointers to data larger than one value in C++ need to be wraped using py::buffer
+    py::class_<NRRD::Image<float>, NRRD::ImageView<float>>(m, "ImageFloat", py::buffer_protocol())
+        .def(py::init<int, int, int, float*>(), "Create a 3D image without data pointer.",
+            py::arg("w"), py::arg("h"), py::arg("d")=1, py::arg("dt")=0x0)
+        .def(py::init([](py::buffer const b){
+
+            py::buffer_info info = b.request();
+
+            if (info.format != py::format_descriptor<float>::format())
+                throw std::runtime_error("Buffer must be float32.");
+            if (info.ndim != 2)
+                throw std::runtime_error("Buffer must have 2 dimensions.");
+
+            auto v = new NRRD::Image<float>(info.shape[0], info.shape[1], 1);
+            memcpy(v->data, info.ptr, sizeof(float) * (size_t) (v->size(0) * v->size(1)));
+            return v;
+        }), "Create a 2D image from a python buffer.", py::arg("b"))
+        /// Provide buffer access
+       .def_buffer([](NRRD::Image<float> &m) -> py::buffer_info {
+            return py::buffer_info(
+                m.data,                               /* Pointer to buffer */
+                { m.size(0), m.size(1) },                 /* Buffer dimensions */
+                { sizeof(float) * size_t(m.size(1)),     /* Strides (in bytes) for each index */
+                  sizeof(float) }
+            );
+        });
 
     // EpipolarConsistencyRadonIntermediateCPU
     py::class_<EpipolarConsistency::MetricCPU>(m, "MetricCPU")

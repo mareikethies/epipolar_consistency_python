@@ -1,6 +1,10 @@
-# -*- coding: utf-8 -*-
-import cmake_example as m
+import ecc
+import numpy as np
 
-assert m.__version__ == "0.0.1"
-assert m.add(1, 2) == 3
-assert m.subtract(1, 2) == -1
+test_image = np.random.random((50, 50))
+test_image = test_image.astype(np.float32)
+
+ecc_image = ecc.ImageFloat(test_image)
+
+print(ecc_image)
+
