@@ -8,6 +8,7 @@
 #include "LibEpipolarConsistency/EpipolarConsistencyRadonIntermediateCPU.hxx"
 #include "NRRD/nrrd_image.hxx"
 #include "NRRD/nrrd_image_view.hxx"
+#include "LibEpipolarConsistency/RadonIntermediate.h"
 
 namespace py = pybind11;
 
@@ -43,14 +44,14 @@ PYBIND11_MODULE(ecc, m)
     m.def("getCameraImagePlane", &Geometry::getCameraImagePlane, "Decomposes the projection matrix to compute the equation of the image plane. For left-handed coordinate systems, pixel_spacing can be negated.",
         py::arg("P"), py::arg("pixel_spacing"));
 
+    // base classes need to be wrapped, too. Otherwise python will complain about an unknown base class when importing the module.
     py::class_<NRRD::ImageView<float>>(m, "ImageViewFloat");
 
-    //templates need to be set to a specific data type for wrapping
-    //base classes need to be wrapped, too. Otherwise python will complain about an unknown base class when importing the module.
-    //pointers to data larger than one value in C++ need to be wraped using py::buffer
-    py::class_<NRRD::Image<float>, NRRD::ImageView<float>>(m, "ImageFloat", py::buffer_protocol())
-        .def(py::init<int, int, int, float*>(), "Create a 3D image without data pointer.",
-            py::arg("w"), py::arg("h"), py::arg("d")=1, py::arg("dt")=0x0)
+    // templates need to be set to a specific data type for wrapping but can be wrapped multiple times with different data types
+    // pointers to data larger than one value in C++ need to be wrapped using py::buffer
+    py::class_<NRRD::Image<float>, NRRD::ImageView<float>>(m, "ImageFloat2D", py::buffer_protocol())
+        //.def(py::init<int, int, int, float*>(), "Create a 3D image without data pointer.",
+        //    py::arg("w"), py::arg("h"), py::arg("d")=1, py::arg("dt")=0x0)
         .def(py::init([](py::buffer const b){
 
             py::buffer_info info = b.request();
@@ -60,19 +61,38 @@ PYBIND11_MODULE(ecc, m)
             if (info.ndim != 2)
                 throw std::runtime_error("Buffer must have 2 dimensions.");
 
-            auto v = new NRRD::Image<float>(info.shape[0], info.shape[1], 1);
-            memcpy(v->data, info.ptr, sizeof(float) * (size_t) (v->size(0) * v->size(1)));
+            auto v = new NRRD::Image<float>(info.shape[0], info.shape[1]);
+            memcpy(v->get_data(), info.ptr, sizeof(float) * (size_t) (v->size(0) * v->size(1)));
             return v;
         }), "Create a 2D image from a python buffer.", py::arg("b"))
         /// Provide buffer access
        .def_buffer([](NRRD::Image<float> &m) -> py::buffer_info {
             return py::buffer_info(
-                m.data,                               /* Pointer to buffer */
+                m.get_data(),                               /* Pointer to buffer */
                 { m.size(0), m.size(1) },                 /* Buffer dimensions */
                 { sizeof(float) * size_t(m.size(1)),     /* Strides (in bytes) for each index */
                   sizeof(float) }
             );
         });
+
+    // RadonIntermediate
+    py::class_<EpipolarConsistency::RadonIntermediate> radon_intermediate(m, "RadonIntermediate");
+
+    // TODO: the first constructor causes segfault when trying to create a second instance of type RadonIntermediate -> why?
+    radon_intermediate.def(py::init<NRRD::ImageView<float>&>(), "Creates a RadonIntermediate object from an Image.", py::arg("radon_intermediate_image"));
+    radon_intermediate.def(py::init<const NRRD::ImageView<float>&, int, int, EpipolarConsistency::RadonIntermediate::Filter, EpipolarConsistency::RadonIntermediate::PostProcess>());
+
+    py::enum_<EpipolarConsistency::RadonIntermediate::Filter>(radon_intermediate, "Filter")
+        .value("Derivative", EpipolarConsistency::RadonIntermediate::Filter::Derivative)
+        .value("Ramp", EpipolarConsistency::RadonIntermediate::Filter::Ramp)
+        .value("None", EpipolarConsistency::RadonIntermediate::Filter::None)
+        .export_values();
+
+    py::enum_<EpipolarConsistency::RadonIntermediate::PostProcess>(radon_intermediate, "PostProcess")
+        .value("Identity", EpipolarConsistency::RadonIntermediate::PostProcess::Identity)
+        .value("SquareRoot", EpipolarConsistency::RadonIntermediate::PostProcess::SquareRoot)
+        .value("Logarithm", EpipolarConsistency::RadonIntermediate::PostProcess::Logarithm)
+        .export_values();
 
     // EpipolarConsistencyRadonIntermediateCPU
     py::class_<EpipolarConsistency::MetricCPU>(m, "MetricCPU")
