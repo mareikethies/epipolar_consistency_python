@@ -50,8 +50,6 @@ PYBIND11_MODULE(ecc, m)
     // templates need to be set to a specific data type for wrapping but can be wrapped multiple times with different data types
     // pointers to data larger than one value in C++ need to be wrapped using py::buffer
     py::class_<NRRD::Image<float>, NRRD::ImageView<float>>(m, "ImageFloat2D", py::buffer_protocol())
-        //.def(py::init<int, int, int, float*>(), "Create a 3D image without data pointer.",
-        //    py::arg("w"), py::arg("h"), py::arg("d")=1, py::arg("dt")=0x0)
         .def(py::init([](py::buffer const b){
 
             py::buffer_info info = b.request();
@@ -61,7 +59,9 @@ PYBIND11_MODULE(ecc, m)
             if (info.ndim != 2)
                 throw std::runtime_error("Buffer must have 2 dimensions.");
 
+            //create 2D uninitialized image using other constructor
             auto v = new NRRD::Image<float>(info.shape[0], info.shape[1]);
+            //copy data from buffer into new Image object
             memcpy(v->get_data(), info.ptr, sizeof(float) * (size_t) (v->size(0) * v->size(1)));
             return v;
         }), "Create a 2D image from a python buffer.", py::arg("b"))
@@ -76,11 +76,37 @@ PYBIND11_MODULE(ecc, m)
         });
 
     // RadonIntermediate
-    py::class_<EpipolarConsistency::RadonIntermediate> radon_intermediate(m, "RadonIntermediate");
+    py::class_<EpipolarConsistency::RadonIntermediate> radon_intermediate(m, "RadonIntermediate", py::buffer_protocol());
 
+    radon_intermediate.def_buffer([](EpipolarConsistency::RadonIntermediate &m) -> py::buffer_info {
+        return py::buffer_info(
+            m.data(),                               /* Pointer to buffer */
+            sizeof(float),                          /* Size of one scalar */
+            py::format_descriptor<float>::format(), /* Python struct-style format descriptor */
+            2,                                      /* Number of dimensions */
+            { m.getRadonBinNumber(0), m.getRadonBinNumber(1) },                 /* Buffer dimensions */
+            { sizeof(float) * m.getRadonBinNumber(1),             /* Strides (in bytes) for each index */
+              sizeof(float) }
+        );
+    });
     // TODO: the first constructor causes segfault when trying to create a second instance of type RadonIntermediate -> why?
     radon_intermediate.def(py::init<NRRD::ImageView<float>&>(), "Creates a RadonIntermediate object from an Image.", py::arg("radon_intermediate_image"));
-    radon_intermediate.def(py::init<const NRRD::ImageView<float>&, int, int, EpipolarConsistency::RadonIntermediate::Filter, EpipolarConsistency::RadonIntermediate::PostProcess>());
+    radon_intermediate.def(py::init<const NRRD::ImageView<float>&, int, int, EpipolarConsistency::RadonIntermediate::Filter, EpipolarConsistency::RadonIntermediate::PostProcess>(), 
+        "Creates a RadonIntermediateObject by taking a projection image, computing the Radon transform and deriving it.", py::arg("projection_image"), py::arg("size_alpha"), py::arg("size_t"), py::arg("filter"), py::arg("post_process"));
+    radon_intermediate.def("replaceRadonIntermediateData", &EpipolarConsistency::RadonIntermediate::replaceRadonIntermediateData, "Update Radon intermediate data with CPU memory.",
+        py::arg("radon_intermediate_image"));
+    radon_intermediate.def("getFilter", &EpipolarConsistency::RadonIntermediate::getFilter, "Which filter has been applied to the Radon transform t-direction?");
+    radon_intermediate.def("isDerivative", &EpipolarConsistency::RadonIntermediate::isDerivative, "If true, then the Radon intermediate function is odd, meaning dtr(alpha+Pi,t)=-dtr(alpha,-t). If false, we have dtr(alpha+Pi,t)=dtr(alpha,-t)");
+    radon_intermediate.def("readback", &EpipolarConsistency::RadonIntermediate::readback, "Readback Radon Intermediate data to CPU. If gpu_memory_only is set, the texture will be transferred to global GPU memory but not read back to RAM.", 
+        py::arg("gpu_memory_only")=false);
+    radon_intermediate.def("getRadonBinNumber", &EpipolarConsistency::RadonIntermediate::getRadonBinNumber, "Access to the size of the Radon transform. 0:distance 1:angle", 
+        py::arg("dim"));
+    radon_intermediate.def("getOriginalImageSize", &EpipolarConsistency::RadonIntermediate::getOriginalImageSize, "Access to size of original image 0:width 1:height",
+        py::arg("dim"));
+    radon_intermediate.def("getRadonBinSize", &EpipolarConsistency::RadonIntermediate::getRadonBinSize, "Access to spacing of DTR. 0:angle 1:distance",
+        py::arg("dim")=1);
+    radon_intermediate.def("data", py::overload_cast<>(&EpipolarConsistency::RadonIntermediate::data), "Access to raw data on CPU (may return invalid image). See also: readback(...)");
+    //radon_intermediate.def("data", py::overload_cast<>(&EpipolarConsistency::RadonIntermediate::data, py::const_), "Access to raw data on CPU (may return invalid image). See also: readback(...)");
 
     py::enum_<EpipolarConsistency::RadonIntermediate::Filter>(radon_intermediate, "Filter")
         .value("Derivative", EpipolarConsistency::RadonIntermediate::Filter::Derivative)

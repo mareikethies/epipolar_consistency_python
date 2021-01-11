@@ -6,3 +6,5 @@ _generate/
 *.py[cod]
 *.egg-info
 *env*
+tests/.idea/
+tests/simulated_projections_downsampled.txt
