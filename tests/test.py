@@ -35,7 +35,8 @@ def test_radon_intermediate():
     plt.show()
 
 
-def test_example_data(index1, index2):
+def test_metric_cpu_vs_gpu(index1, index2):
+    dkappa=0.001
     geometry_file = Path(r'simulated_projections_downsampled.txt')
     with open(geometry_file) as f:
         geometry_data = json.load(f)
@@ -47,7 +48,66 @@ def test_example_data(index1, index2):
                                   np.array(geometry_data['Rotations'][index2]),
                                   np.array(geometry_data['Translations'][index2]))
 
-    projections_file = Path(r'../../../Data/ERC/Aging Kinetics/6522(7)_20201103/simulated_projections.tif')
+    projections_file = Path(r'../../../Data/ERC/Ex-Vivo/Aging Kinetics/6522(7)_20201103/simulated_projections.tif')
+    projections = imread(projections_file, plugin='tifffile')
+
+    image1 = ecc.ImageFloat2D(projections[index1, :, :].astype(np.float32))
+    image2 = ecc.ImageFloat2D(projections[index2, :, :].astype(np.float32))
+    radon_intermediate1 = ecc.RadonIntermediate(image1, 100, 100,
+                                                ecc.RadonIntermediate.Filter.Derivative,
+                                                ecc.RadonIntermediate.PostProcess.Identity)
+    radon_intermediate2 = ecc.RadonIntermediate(image2, 100, 100,
+                                                ecc.RadonIntermediate.Filter.Derivative,
+                                                ecc.RadonIntermediate.PostProcess.Identity)
+    radon_intermediate1.readback()
+    radon_intermediate2.readback()
+
+    # on CPU
+    metric_cpu = ecc.MetricCPU([P1, P2], [radon_intermediate1, radon_intermediate2], plane_angle_increment=dkappa)
+
+    out_cpu = metric_cpu.operator()
+
+    # on GPU
+    metric_gpu = ecc.MetricGPU([P1, P2], [radon_intermediate1, radon_intermediate2])
+    metric_gpu = metric_gpu.setdKappa(dkappa)
+
+    out_gpu = metric_gpu.evaluate()
+
+    # Andre says, it is ok if these are not the same as long as they have the same trend when plotted over one parameter
+    print(f'CPU: {out_cpu}')
+    print(f'GPU: {out_gpu}')
+
+    return out_cpu, out_gpu
+
+
+def plot_over_pairs():
+    out_cpu = []
+    out_gpu = []
+    for i in range(1000):
+        cpu, gpu = test_metric_cpu_vs_gpu(0, i)
+        out_cpu.append(cpu)
+        out_gpu.append(gpu)
+
+    plt.figure()
+    plt.plot(out_cpu)
+    plt.figure()
+    plt.plot(out_gpu)
+    plt.show()
+
+
+def test_real_data(index1, index2):
+    geometry_file = Path(r'simulated_projections_downsampled.txt')
+    with open(geometry_file) as f:
+        geometry_data = json.load(f)
+
+    P1 = ecc.makeProjectionMatrix(np.array(geometry_data['Intrinsics'][index1]),
+                                  np.array(geometry_data['Rotations'][index1]),
+                                  np.array(geometry_data['Translations'][index1]))
+    P2 = ecc.makeProjectionMatrix(np.array(geometry_data['Intrinsics'][index2]),
+                                  np.array(geometry_data['Rotations'][index2]),
+                                  np.array(geometry_data['Translations'][index2]))
+
+    projections_file = Path(r'../../../Data/ERC/Ex-Vivo/Aging Kinetics/6522(7)_20201103/simulated_projections.tif')
     projections = imread(projections_file, plugin='tifffile')
 
     image1 = ecc.ImageFloat2D(projections[index1, :, :].astype(np.float32))
@@ -80,7 +140,7 @@ def test_example_data(index1, index2):
 
 
 if __name__ == "__main__":
-    test_example_data(0, 100)
+    plot_over_pairs()
 
 
 

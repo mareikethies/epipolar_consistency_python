@@ -6,6 +6,8 @@
 
 #include "LibProjectiveGeometry/ProjectionMatrix.h"
 #include "LibEpipolarConsistency/EpipolarConsistencyRadonIntermediateCPU.hxx"
+#include "LibEpipolarConsistency/EpipolarConsistencyRadonIntermediate.h"
+#include "LibEpipolarConsistency/EpipolarConsistency.h"
 #include "NRRD/nrrd_image.hxx"
 #include "NRRD/nrrd_image_view.hxx"
 #include "LibEpipolarConsistency/RadonIntermediate.h"
@@ -127,5 +129,27 @@ PYBIND11_MODULE(ecc, m)
         .def("operator", py::overload_cast<>(&EpipolarConsistency::MetricCPU::operator()), "Evaluates consistency for all image pairs on CPU")
         .def("operator", py::overload_cast<int>(&EpipolarConsistency::MetricCPU::operator()), "Evaluates consistency for the i-th projection on CPU",
             py::arg("ref_projection"));
+
+    py::class_<EpipolarConsistency::Metric>(m, "Metric");
+
+    // EpipolarConsistencyRadonIntermediate (GPU)
+    py::class_<EpipolarConsistency::MetricRadonIntermediate, EpipolarConsistency::Metric>(m, "MetricGPU")
+        .def(py::init<>(), "Create empty MetricGPU object.")
+        .def(py::init<const std::vector<Geometry::ProjectionMatrix>&, const std::vector<EpipolarConsistency::RadonIntermediate*>&>(), "Create MetricGPU objetc and set projection matrcies and radon intermediates.",
+            py::arg("Ps"), py::arg("dtrs"))
+        //.def("useCorrelation", &EpipolarConsistency::MetricRadonIntermediate::useCorrelation, "Tell Metric to compute correlation instead of SSD.",
+        //    py::arg("corr")=true)
+        //.def("setRadonIntermediates", &EpipolarConsistency::MetricRadonIntermediate::setRadonIntermediates, "Move Radon derivetaives to texture memory and store reference here. DO NOT delete or change _dtrs during lifetime of Metric.",
+        //    py::arg("dtrs"))
+        //.def("setRadonIntermediateBinning", &EpipolarConsistency::MetricRadonIntermediate::setRadonIntermediateBinning, "Set parameters for computation of Radon intermediate functions in setProjectionImages(...).",
+        //    py::arg("num_bins_per_180_deg"), py::arg("num_bins_per_image_diagonal"))
+        .def("evaluate", py::overload_cast<float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric without any transformation of the geometry. Out is n*n and mean is returned.",
+            py::arg("out")=0x0)
+        .def("evaluate", py::overload_cast<const std::set<int>&, float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric for just specific view.",
+            py::arg("views"), py::arg("out")=0x0)
+        .def("evaluate", py::overload_cast<const std::vector<Eigen::Vector4i>&, float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric without any transformation of the geometry. Indices addresses (P0,P1,dtr0,dtr1).",
+            py::arg("indices"), py::arg("out")=0x0)
+        .def("setdKappa", &EpipolarConsistency::MetricRadonIntermediate::setdKappa, "Set plane angle increment dkappa.", 
+            py::arg("dkappa")=0.001745329251);
 
 }
