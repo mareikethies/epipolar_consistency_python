@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from skimage.io import imread
 import json
+from xml.dom import minidom
 
 
 def test_radon_intermediate():
@@ -139,8 +140,62 @@ def test_real_data(index1, index2):
     print(out)
 
 
+def get_projection_matrices_from_conrad_xml():
+    conrad_xml = minidom.parse('/home/mareike/Data/SimplePhantom/ConradSheppLogan3DForward.xml')
+    all = conrad_xml.getElementsByTagName("object")
+
+    mats = []
+    for element in all:
+        if element.getAttribute('class') == 'edu.stanford.rsl.conrad.geometry.Projection':
+            pm_str = element.childNodes[1].childNodes[1].childNodes[0].data
+            pm_str = pm_str.replace('[', '')
+            pm_str = pm_str.replace(']', '')
+            pm_str = pm_str.replace(';', '')
+            parts = pm_str.split(' ')
+            mat = np.zeros((3, 4))
+            mat[0, 0] = eval(parts[0])
+            mat[0, 1] = eval(parts[1])
+            mat[0, 2] = eval(parts[2])
+            mat[0, 3] = eval(parts[3])
+            mat[1, 0] = eval(parts[4])
+            mat[1, 1] = eval(parts[5])
+            mat[1, 2] = eval(parts[6])
+            mat[1, 3] = eval(parts[7])
+            mat[2, 0] = eval(parts[8])
+            mat[2, 1] = eval(parts[9])
+            mat[2, 2] = eval(parts[10])
+            mat[2, 3] = eval(parts[11])
+
+            mats.append(mat)
+    return np.moveaxis(np.array(mats), 0, 2)
+
+
+def compute_radon_intermediates(projection_images, size_alpha=100, size_t=100):
+    radon_intermediates = []
+    for image in projection_images:
+        image = ecc.ImageFloat2D(image.astype(np.float32))
+        radon_intermediate = ecc.RadonIntermediate(image, size_alpha, size_t,
+                                                   ecc.RadonIntermediate.Filter.Derivative,
+                                                   ecc.RadonIntermediate.PostProcess.Identity)
+        radon_intermediate.readback()
+        radon_intermediates.append(radon_intermediate)
+    return radon_intermediates
+
+
+def test_more_pairs(number):
+    projection_matrices = get_projection_matrices_from_conrad_xml()
+    projection_matrices = [projection_matrices[:, :, i] for i in range(projection_matrices.shape[2])]
+    projection_images = imread('/home/mareike/Data/SimplePhantom/SheppLogan3DForward.tif', plugin='tifffile')
+    projection_images = [projection_images[i, :, :] for i in range(projection_images.shape[0])]
+
+    radon_intermediates = compute_radon_intermediates(projection_images[:number])
+    metric_gpu = ecc.MetricGPU(projection_matrices[:number], radon_intermediates)
+    out = metric_gpu.evaluate()
+    print(out)
+
+
 if __name__ == "__main__":
-    plot_over_pairs()
+    test_more_pairs(100)
 
 
 

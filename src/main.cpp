@@ -143,12 +143,12 @@ PYBIND11_MODULE(ecc, m)
         //    py::arg("dtrs"))
         //.def("setRadonIntermediateBinning", &EpipolarConsistency::MetricRadonIntermediate::setRadonIntermediateBinning, "Set parameters for computation of Radon intermediate functions in setProjectionImages(...).",
         //    py::arg("num_bins_per_180_deg"), py::arg("num_bins_per_image_diagonal"))
-        .def("evaluate", py::overload_cast<float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric without any transformation of the geometry. Out is n*n and mean is returned.",
-            py::arg("out")=0x0)
-        .def("evaluate", py::overload_cast<const std::set<int>&, float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric for just specific view.",
-            py::arg("views"), py::arg("out")=0x0)
-        .def("evaluate", py::overload_cast<const std::vector<Eigen::Vector4i>&, float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric without any transformation of the geometry. Indices addresses (P0,P1,dtr0,dtr1).",
-            py::arg("indices"), py::arg("out")=0x0)
+        .def("evaluate", py::overload_cast<float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric without any transformation of the geometry. Argument out has no function when set from python, don't use it.",
+            py::arg("out")=0)
+        .def("evaluate", py::overload_cast<const std::set<int>&, float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric for just specific view. Argument out has no function when set from python, don't use it.",
+            py::arg("views"), py::arg("out")=0)
+        .def("evaluate", py::overload_cast<const std::vector<Eigen::Vector4i>&, float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric without any transformation of the geometry. Indices addresses (P0,P1,dtr0,dtr1). Argument out has no function when set from python, don't use it.",
+            py::arg("indices"), py::arg("out")=0)
         .def("setdKappa", &EpipolarConsistency::MetricRadonIntermediate::setdKappa, "Set plane angle increment dkappa.", 
             py::arg("dkappa")=0.001745329251);
 
