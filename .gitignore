@@ -8,3 +8,6 @@ _generate/
 *env*
 tests/.idea/
 tests/simulated_projections_downsampled.txt
+.idea/
+tests/plot_cpu.png
+tests/plot_gpu.png

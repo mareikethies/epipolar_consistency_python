@@ -2,7 +2,7 @@ import ecc
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from skimage.data import shepp_logan_phantom
-from skimage.transform import rescale
+from skimage.transform import rescale, radon
 import matplotlib.pyplot as plt
 from pathlib import Path
 from skimage.io import imread
@@ -13,6 +13,10 @@ from xml.dom import minidom
 def test_radon_intermediate():
     # create shepp logan
     image = rescale(shepp_logan_phantom(), scale=0.125, mode='reflect', multichannel=False).astype(np.float32)
+    image = np.concatenate((image, np.zeros((50, 10))), axis=1).astype(np.float32)
+    theta = np.linspace(0., 180., max(image.shape), endpoint=False)
+    sinogram = radon(image, theta=theta, circle=True)
+    sinogram = np.diff(sinogram, axis=0)
     # convert from numpy to internal data structure
     ecc_image = ecc.ImageFloat2D(image)
     # convert from internal data structure back to numpy
@@ -31,7 +35,7 @@ def test_radon_intermediate():
     plt.imshow(test_before, cmap="gray")
     plt.title('Input projection')
     plt.subplot(122)
-    plt.imshow(test_after, cmap="gray")
+    plt.imshow(sinogram, cmap="gray")
     plt.title('Derivative of sinogram')
     plt.show()
 
@@ -195,7 +199,7 @@ def test_more_pairs(number):
 
 
 if __name__ == "__main__":
-    test_more_pairs(100)
+    test_radon_intermediate()
 
 
 
