@@ -23,7 +23,7 @@ def test_radon_intermediate():
     test_before = np.array(ecc_image)
 
     # compute radon intermediate
-    radon_intermediate = ecc.RadonIntermediate(ecc_image, 100, 100, ecc.RadonIntermediate.Filter.Derivative, ecc.RadonIntermediate.PostProcess.Identity)
+    radon_intermediate = ecc.RadonIntermediate(ecc_image, 100, 200, ecc.RadonIntermediate.Filter.Derivative, ecc.RadonIntermediate.PostProcess.Identity)
     # read back the derived forward projection from GPU to CPU
     radon_intermediate.readback()
     # convert radon intermediate back to numpy
@@ -31,12 +31,15 @@ def test_radon_intermediate():
 
     # plot before and after forward projection and derivation
     plt.figure()
-    plt.subplot(121)
+    plt.subplot(131)
     plt.imshow(test_before, cmap="gray")
     plt.title('Input projection')
-    plt.subplot(122)
+    plt.subplot(132)
     plt.imshow(sinogram, cmap="gray")
     plt.title('Derivative of sinogram')
+    plt.subplot(133)
+    plt.imshow(test_after, cmap="gray")
+    plt.title('Radon Intermediate')
     plt.show()
 
 
