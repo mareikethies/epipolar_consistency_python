@@ -62,7 +62,7 @@ PYBIND11_MODULE(ecc, m)
                 throw std::runtime_error("Buffer must have 2 dimensions.");
 
             //create 2D uninitialized image using other constructor
-            auto v = new NRRD::Image<float>(info.shape[0], info.shape[1]);
+            auto v = new NRRD::Image<float>(info.shape[1], info.shape[0]);
             //copy data from buffer into new Image object
             memcpy(v->get_data(), info.ptr, sizeof(float) * (size_t) (v->size(0) * v->size(1)));
             return v;
@@ -71,8 +71,8 @@ PYBIND11_MODULE(ecc, m)
        .def_buffer([](NRRD::Image<float> &m) -> py::buffer_info {
             return py::buffer_info(
                 m.get_data(),                               /* Pointer to buffer */
-                { m.size(0), m.size(1) },                 /* Buffer dimensions */
-                { sizeof(float) * size_t(m.size(1)),     /* Strides (in bytes) for each index */
+                { m.size(1), m.size(0) },                 /* Buffer dimensions */
+                { sizeof(float) * size_t(m.size(0)),     /* Strides (in bytes) for each index */
                   sizeof(float) }
             );
         });
@@ -86,8 +86,8 @@ PYBIND11_MODULE(ecc, m)
             sizeof(float),                          /* Size of one scalar */
             py::format_descriptor<float>::format(), /* Python struct-style format descriptor */
             2,                                      /* Number of dimensions */
-            { m.getRadonBinNumber(0), m.getRadonBinNumber(1) },                 /* Buffer dimensions */
-            { sizeof(float) * m.getRadonBinNumber(1),             /* Strides (in bytes) for each index */
+            { m.getRadonBinNumber(1), m.getRadonBinNumber(0) },                 /* Buffer dimensions */
+            { sizeof(float) * m.getRadonBinNumber(0),             /* Strides (in bytes) for each index */
               sizeof(float) }
         );
     });
@@ -150,6 +150,8 @@ PYBIND11_MODULE(ecc, m)
         .def("evaluate", py::overload_cast<const std::vector<Eigen::Vector4i>&, float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric without any transformation of the geometry. Indices addresses (P0,P1,dtr0,dtr1). Argument out has no function when set from python, don't use it.",
             py::arg("indices"), py::arg("out")=0)
         .def("setdKappa", &EpipolarConsistency::MetricRadonIntermediate::setdKappa, "Set plane angle increment dkappa.", 
-            py::arg("dkappa")=0.001745329251);
+            py::arg("dkappa")=0.001745329251)
+        .def("setProjectionMatrices", &EpipolarConsistency::MetricRadonIntermediate::setProjectionMatrices, "Compute null space and pseudoinverse of projection matrices and convert to float (GPU is only faster for very large problems)",
+            py::arg("Ps"));
 
 }
