@@ -32,6 +32,16 @@ With the `setup.py` file included in this example, the `pip install` command wil
 invoke CMake and build the pybind11 module as specified in `CMakeLists.txt`.
 
 
+## Create html doc of ecc module
+
+To create an overview of all functions and classes provided by the ecc module, run
+
+```bash
+pydoc -w ecc
+```
+from an environment with ecc installed. It creates a file ecc.html within the same folder.
+
+
 ## Special notes for Windows
 
 **Compiler requirements**
