@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4...3.18)
 project(ecc_python)
 
-find_package(Eigen3 3.3.0 REQUIRED NO_MODULE)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 add_subdirectory(pybind11)
 add_subdirectory(EpipolarConsistency)
