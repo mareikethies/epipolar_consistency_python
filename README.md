@@ -3,7 +3,8 @@
 This project provides python bindings for the computation of epipolar consistency in transmission imaging.
 It is based on [pybind11](https://github.com/pybind/pybind11). This repo has been built upon their provided [cmake example](https://github.com/pybind/cmake_example).
 
-The sources to be wrapped are located in [EpipolarConsistency](https://github.com/aaichert/EpipolarConsistency).  
+The sources to be wrapped are located in [EpipolarConsistency](https://github.com/aaichert/EpipolarConsistency). Only the key functionality to compute the ECC quality metric 
+from several projection images and their projection matrices is included in the python module. No optimizers, GUIs or any other advanced functionality from the basis repository is included. 
 
 ## Prerequisites
 
@@ -20,17 +21,44 @@ The sources to be wrapped are located in [EpipolarConsistency](https://github.co
 
 ## Installation
 
-Just clone this repository and pip install. Note the `--recursive` option which is
-needed for the pybind11 submodule:
+Clone this repository (with `--recurse-submodules` option), install the necessary dependencies for the core ECC functionality in 
+[EpipolarConsistency](https://github.com/aaichert/EpipolarConsistency) and pip install this repository. With the `setup.py` file 
+included in this example, the `pip install` command will invoke CMake and build the pybind11 module as specified in `CMakeLists.txt`.
 
 ```bash
 cd ecc_python
 pip install .
 ```
+It is crucial to have all dependencies of the core ECC functionality written in C++ installed properly. Please also refer to the 
+Readme in [EpipolarConsistency](https://github.com/aaichert/EpipolarConsistency). On Ubuntu 20.04, a working set of dependencies
+and their corresponding versions is:
+- Eigen 3.3.9 (Even though Eigen is header only, in order to make sure that all files are located at the default locations, run
+cmake and make install as described below. I know that Andre Aichert suggests to use Eigen 3.3.0, but I had issues with cmake not finding it then.)
+- NLopt 2.6.2
+- LibGetSet from Andre Aichert's fork 
+- Qt 5.12.11 (Any version with major version number 5 should work. It is helpful to set the CMAKE_PREFIX_PATH to Qt as described [here](https://github.com/aaichert/EpipolarConsistency#41-notes-on-using-qt).)
+- Cuda 11.2
 
-With the `setup.py` file included in this example, the `pip install` command will
-invoke CMake and build the pybind11 module as specified in `CMakeLists.txt`.
+The standard way to install most of these packages (like NLopt, GetSet) on Ubuntu is
+```bash
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+```
+For Windows, you need Visual Studio to build the solutions provided by cmake.
 
+
+To test whether all dependencies are installed and found correctly, it might make sense to first build the submodule [EpipolarConsistency](https://github.com/aaichert/EpipolarConsistency)
+separately and then try to pip install it as a python package.  
+
+## Test call
+
+```python
+import ecc
+help(ecc)
+```
 
 ## Special notes for Windows
 
@@ -60,16 +88,4 @@ For more details on this see https://github.com/pybind/cmake_example/issues/11#i
 Pybind11 is provided under a BSD-style license that can be found in the LICENSE
 file. By using, distributing, or contributing to this project, you agree to the
 terms and conditions of this license.
-
-
-## Test call
-
-```python
-import ecc
-help(ecc)
-```
-
-
-[FAQ]: http://pybind11.rtfd.io/en/latest/faq.html#working-with-ancient-visual-studio-2009-builds-on-windows
-[vs2015_runtime]: https://www.microsoft.com/en-us/download/details.aspx?id=48145
 
