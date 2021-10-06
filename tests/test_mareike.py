@@ -12,11 +12,27 @@ from xml.dom import minidom
 
 def test_radon_intermediate():
     # create shepp logan
-    image = rescale(shepp_logan_phantom(), scale=0.125, mode='reflect', multichannel=False).astype(np.float32)
-    image = np.concatenate((image, np.zeros((50, 10))), axis=1).astype(np.float32)
+    # image = rescale(shepp_logan_phantom(), scale=0.125, mode='reflect', multichannel=False).astype(np.float32)
+    # image = np.concatenate((image, np.zeros((50, 10))), axis=1).astype(np.float32)
+    image = shepp_logan_phantom()
     theta = np.linspace(0., 180., max(image.shape), endpoint=False)
     sinogram = radon(image, theta=theta, circle=True)
-    sinogram = np.diff(sinogram, axis=0)
+    sinogram_derived = np.diff(sinogram, axis=0)
+    plt.figure()
+    plt.imshow(sinogram, cmap='gray')
+    plt.xticks([])
+    plt.yticks([])
+    plt.tight_layout()
+    # plt.xlabel('Angles')
+    # plt.ylabel('Virtual detector elements')
+    plt.figure()
+    plt.imshow(sinogram_derived, cmap='gray')
+    plt.xticks([])
+    plt.yticks([])
+    plt.tight_layout()
+    # plt.xlabel('Angles')
+    # plt.ylabel('Virtual detector elements')
+    plt.show()
     # convert from numpy to internal data structure
     ecc_image = ecc.ImageFloat2D(image)
     # convert from internal data structure back to numpy
