@@ -60,6 +60,14 @@ import ecc
 help(ecc)
 ```
 
+## Building a wheel
+
+To build a wheel of the ecc package on Ubuntu, you need to have ninja installed (`sudo apt-get install ninja-build`) and then run
+```bash
+python setup.py bdist_wheel
+```
+A prebuild wheel of version 0.0.1, python 3.8, Ubuntu x86_64 is included in this repository. 
+
 ## Special notes for Windows
 
 **Compiler requirements**
