@@ -1,5 +1,4 @@
 build/
-dist/
 _build/
 _generate/
 *.so
