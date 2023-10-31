@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4...3.18)
+cmake_minimum_required(VERSION 3.12...3.18)
 project(ecc_python)
 
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
