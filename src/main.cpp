@@ -28,10 +28,6 @@ PYBIND11_MODULE(ecc, m)
     m.def("projectionMatrixDecomposition", &Geometry::projectionMatrixDecomposition, 
         "Decompose Projection Matrix into K[R|t] using RQ-decomposition. Returns false if R is left-handed (For RHS world coordinate systems, this implies imageVPointsUp is wrong).",
         py::arg("P"), py::arg("K"), py::arg("R"), py::arg("t"), py::arg("imageVPointsUp")=true);
-    //TODO: why is python unhappy with normalizeProjectionMatrix (fails at import)??
-    //m.def("normalizeProjectionMatrix", &Geometry::normalizeProjectionMatrix, 
-    //    "Normalize a camera matrix P=[M|p4] by -sign(det(M))/||m3|| such that (du,dv,d)'=P(X,Y,Z,1)' encodes the depth d.",
-    //    py::arg("P"));
     m.def("pseudoInverse", &Geometry::pseudoInverse, "Backprojection", py::arg("P"));
     m.def("getCameraIntrinsics", &Geometry::getCameraIntrinsics, "Return intrinsic parameters in upper triangular 3x3 matrix.",
         py::arg("P"));
@@ -91,8 +87,6 @@ PYBIND11_MODULE(ecc, m)
               sizeof(float) }
         );
     });
-    // TODO: the first constructor causes segfault when trying to create a second instance of type RadonIntermediate -> why?
-    radon_intermediate.def(py::init<NRRD::ImageView<float>&>(), "Creates a RadonIntermediate object from an Image.", py::arg("radon_intermediate_image"));
     radon_intermediate.def(py::init<const NRRD::ImageView<float>&, int, int, EpipolarConsistency::RadonIntermediate::Filter, EpipolarConsistency::RadonIntermediate::PostProcess>(), 
         "Creates a RadonIntermediateObject by taking a projection image, computing the Radon transform and deriving it.", py::arg("projection_image"), py::arg("size_alpha"), py::arg("size_t"), py::arg("filter"), py::arg("post_process"));
     radon_intermediate.def("replaceRadonIntermediateData", &EpipolarConsistency::RadonIntermediate::replaceRadonIntermediateData, "Update Radon intermediate data with CPU memory.",
@@ -108,7 +102,6 @@ PYBIND11_MODULE(ecc, m)
     radon_intermediate.def("getRadonBinSize", &EpipolarConsistency::RadonIntermediate::getRadonBinSize, "Access to spacing of DTR. 0:angle 1:distance",
         py::arg("dim")=1);
     radon_intermediate.def("data", py::overload_cast<>(&EpipolarConsistency::RadonIntermediate::data), "Access to raw data on CPU (may return invalid image). See also: readback(...)");
-    //radon_intermediate.def("data", py::overload_cast<>(&EpipolarConsistency::RadonIntermediate::data, py::const_), "Access to raw data on CPU (may return invalid image). See also: readback(...)");
 
     py::enum_<EpipolarConsistency::RadonIntermediate::Filter>(radon_intermediate, "Filter")
         .value("Derivative", EpipolarConsistency::RadonIntermediate::Filter::Derivative)
@@ -137,12 +130,6 @@ PYBIND11_MODULE(ecc, m)
         .def(py::init<>(), "Create empty MetricGPU object.")
         .def(py::init<const std::vector<Geometry::ProjectionMatrix>&, const std::vector<EpipolarConsistency::RadonIntermediate*>&>(), "Create MetricGPU objetc and set projection matrcies and radon intermediates.",
             py::arg("Ps"), py::arg("dtrs"))
-        //.def("useCorrelation", &EpipolarConsistency::MetricRadonIntermediate::useCorrelation, "Tell Metric to compute correlation instead of SSD.",
-        //    py::arg("corr")=true)
-        //.def("setRadonIntermediates", &EpipolarConsistency::MetricRadonIntermediate::setRadonIntermediates, "Move Radon derivetaives to texture memory and store reference here. DO NOT delete or change _dtrs during lifetime of Metric.",
-        //    py::arg("dtrs"))
-        //.def("setRadonIntermediateBinning", &EpipolarConsistency::MetricRadonIntermediate::setRadonIntermediateBinning, "Set parameters for computation of Radon intermediate functions in setProjectionImages(...).",
-        //    py::arg("num_bins_per_180_deg"), py::arg("num_bins_per_image_diagonal"))
         .def("evaluate", py::overload_cast<float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric without any transformation of the geometry. Argument out has no function when set from python, don't use it.",
             py::arg("out")=0)
         .def("evaluate", py::overload_cast<const std::set<int>&, float*>(&EpipolarConsistency::MetricRadonIntermediate::evaluate), "Evaluates metric for just specific view. Argument out has no function when set from python, don't use it.",
