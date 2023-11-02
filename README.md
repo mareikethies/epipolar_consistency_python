@@ -21,13 +21,51 @@ More advanced functionality of the original repository, that is *not* included i
 We think that these aspects can similarly be handled by native Python libraries.  
 
 ## Example code
+```python
+import ecc
+import numpy as np
 
-## Installation from wheel
 
-This repository contains wheels for Linux operating system and Python 3.8 and 3.10. 
-We strongly encourage to install the Python module directly from these wheels via, e.g.,  
+# overview over all wrapped functions/ classes
+print(help(ecc))
+
+# set parameters for computation of Radon intermediates
+size_alpha = 200
+size_t = 100
+
+# load example projection images
+projection_images = np.load('example_data/sinogram_cone.npy').astype(np.float32)
+# convert to list
+projection_images = [projection_images[i, :, :] for i in range(projection_images.shape[0])]
+# compute radon intermediates with 100 detector elements and 200 angular steps
+radon_intermediates = []
+for image in projection_images:
+    image = ecc.ImageFloat2D(image.astype(np.float32))
+    radon_intermediate = ecc.RadonIntermediate(image, size_alpha, size_t,
+                                               ecc.RadonIntermediate.Filter.Derivative,
+                                               ecc.RadonIntermediate.PostProcess.Identity)
+    radon_intermediates.append(radon_intermediate)
+
+# load example projection matrices
+projection_matrices = np.load('example_data/projection_matrices.npy')
+# convert to list
+projection_matrices = [projection_matrices[i, :, :] for i in range(projection_matrices.shape[0])]
+
+# create object to evaluate ECC metric on GPU
+ecc_metric_gpu = ecc.MetricGPU(projection_matrices, radon_intermediates)
+
+# set the angle between epipolar planes (otherwise default value is taken)
+metric_gpu = ecc_metric_gpu.setdKappa(0.001)
+# evaluate the metric
+out_gpu = metric_gpu.evaluate()
+print(f'Result: {out_gpu}')
+```
+## Installation via pip
+
+Prebuilt wheels are available via pip for Linux operating system and Python versions 3.8, 3.9, 3.10, and 3.11. 
+We strongly encourage to install the Python module directly from PyPI: 
 ```bash
-pip install dist/ecc-0.0.1-cp310-cp310-linux_x86_64.whl
+pip install epipolar-consistency
 ```
 
 ## Installation from source
@@ -82,11 +120,10 @@ help(ecc)
 
 ## Building a wheel
 
-To build a wheel of the ecc package on Ubuntu, you need to have ninja installed (`sudo apt-get install ninja-build`) and then run
+To build a wheel of the ecc package on Linux, you need to have ninja installed (`sudo apt-get install ninja-build`) and then run
 ```bash
-python setup.py bdist_wheel
+python setup.py bdist_wheel --plat-name manylinux2014_x86_64
 ```
-Prebuild wheels for Linux with Python 3.8 and 3.10 are included in this repository. 
 
 ## Create html documentation of ecc module
 

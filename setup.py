@@ -110,12 +110,17 @@ class CMakeBuild(build_ext):
         subprocess.check_call(
             ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         )
-
+        
+with open("README.md", "r") as f:
+    long_description = f.read()
 
 setup(
-    name="ecc",
+    name="epipolar_consistency",
     version="0.0.1",
-    ext_modules=[CMakeExtension("ecc")],
+    ext_modules=[CMakeExtension("epipolar_consistency")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
+    description="Python bindings for evaluating epipolar consistency conditions in transmission imaging.",
+    long_description=long_description,
+    long_description_content_type="text/markdown"
 )
