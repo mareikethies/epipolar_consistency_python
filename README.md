@@ -141,11 +141,15 @@ For more details on this see https://github.com/pybind/cmake_example/issues/11#i
 
 To take full advantage of this code, an NVIDIA GPU is needed for a parallelized computation of Radon intermediates and the ECC metric itself.
 
-## License
+## Licenses
 
-Pybind11 is provided under a BSD-style license that can be found in the LICENSE
-file. By using, distributing, or contributing to this project, you agree to the
-terms and conditions of this license.
+Pybind11 is provided under a BSD-style license that can be found in the pybind11 folder. 
+By using, distributing, or contributing to this project, you agree to the terms and conditions of this license.
+
+The [EpipolarConsistency](https://github.com/aaichert/EpipolarConsistency) repository is published under an Apache 2.0 license.
+It can be found in the EpipolarConsistency folder.
+
+The code for the Python bindings is published under an Apache 2.0 license which can be found in the root folder of this repository. 
 
 ## Citation
 
