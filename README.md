@@ -62,7 +62,7 @@ print(f'Result: {out_gpu}')
 ```
 ## Installation via pip
 
-Prebuilt wheels are available via pip for Linux operating system and Python versions 3.8, 3.9, 3.10, and 3.11. 
+Prebuilt wheels are available via pip for Linux operating system and Python versions 3.8, 3.9, and 3.10. 
 We strongly encourage to install the Python module directly from PyPI: 
 ```bash
 pip install epipolar-consistency

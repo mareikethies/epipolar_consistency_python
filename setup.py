@@ -116,7 +116,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="epipolar_consistency",
-    version="0.0.1",
+    version="0.0.2",
     ext_modules=[CMakeExtension("epipolar_consistency")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
